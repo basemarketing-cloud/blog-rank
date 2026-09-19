@@ -37,9 +37,17 @@ test('DOM parser excludes ad/place, preserves general websites, reads visible pr
   const briefing=await page.evaluate(extractPage,browserRules);
   assert.equal(briefing.results.length,2);assert.deepEqual(briefing.unknown,[]);
   assert.equal(calculateRank(orderResults(briefing.results),'휴한의원 창원',20).rank,2);
+  // Observed Clip/video carousels are separate services, including blog-sourced videos.
+  for(const template of ['clip/prs_template_v2_clip_overlaytext_desk.ts','video/prs_template_v2_video_desk.ts']){
+   await page.setContent(`<div id="main_pack"><div data-block-id="${template}"><h2>동영상</h2><a href="https://blog.naver.com/clip/123">영상 링크</a>${card('https://blog.naver.com/video/123','휴한의원 창원','영상 제목')}</div><section>${card('https://example.com','일반 웹사이트','네이버 클립과 동영상 소개')}${card('https://blog.naver.com/a/123','휴한의원 창원','일반 블로그 글')}</section></div>`);
+   const media=await page.evaluate(extractPage,browserRules);
+   assert.deepEqual(media.unknown,[]);assert.deepEqual(media.unresolved,[]);
+   assert.equal(media.results.length,2);assert.equal(calculateRank(orderResults(media.results),'휴한의원 창원',20).rank,2);
+  }
   // Unknown real result blocks still fail closed; do not disable the guard.
   await page.setContent('<div id="main_pack"><section><a href="https://example.com/article">새로운 형태의 일반 결과</a></section></div>');
   assert.equal((await page.evaluate(extractPage,browserRules)).unknown.length,1);
   await page.setContent('<h1>접근 확인</h1>');assert.equal((await page.evaluate(extractPage,browserRules)).error,'STRUCTURE');
  }finally{await browser.close();}
 });
+
