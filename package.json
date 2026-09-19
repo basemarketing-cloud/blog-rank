@@ -1,0 +1,9 @@
+{
+  "name": "naver-blog-rank-checker",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {"start": "node src/server.mjs", "probe": "node scripts/probe.mjs", "test": "node --test"},
+  "dependencies": {"playwright": "1.62.1"},
+  "engines": {"node": ">=22"}
+}
