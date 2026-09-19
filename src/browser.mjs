@@ -1,6 +1,7 @@
 import { createRequire } from 'node:module';
 import { existsSync } from 'node:fs';
 import { join } from 'node:path';
+import {launchIsolatedBrowser} from './browser-session.mjs';
 const require = createRequire(import.meta.url);
 export async function launchBrowser() {
   let pw;
@@ -11,7 +12,7 @@ export async function launchBrowser() {
   }
   if(process.env.VERCEL){
     const {default:chromium}=await import('@sparticuz/chromium');
-    return pw.chromium.launch({headless:true,args:chromium.args,executablePath:await chromium.executablePath()});
+    return launchIsolatedBrowser(pw.chromium,{headless:true,args:[...chromium.args.filter(a=>!a.startsWith('--disk-cache-size=')),'--disk-cache-size=1048576','--media-cache-size=1048576'],executablePath:await chromium.executablePath()});
   }
   const edge = join(process.env['ProgramFiles(x86)'] || 'C:/Program Files (x86)', 'Microsoft/Edge/Application/msedge.exe');
   return pw.chromium.launch({ headless: true, ...(existsSync(edge) ? {executablePath: edge} : {}) });
