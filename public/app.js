@@ -28,16 +28,18 @@ form.addEventListener('submit',async event=>{
     const response=await fetch('/api/rank',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({keyword,blogNames,limit}),signal:AbortSignal.timeout(155000)});
     const result=await response.json();if(!response.ok)throw new Error(result.error||'검색에 실패했습니다. 잠시 후 다시 시도해주세요.');
     row.th.append(el('small',`${result.checkedCount}개 확인\n${time(result.checkedAt)}`,'row-meta'));
-    if(result.observedResults){
-     const evidence=el('details'),summary=el('summary',`${keyword} · 수집한 결과 보기`),list=el('ol');
-     evidence.append(summary,el('p','서버가 확인한 일반 검색 결과 순서입니다. 내 PC 검색 화면과 다를 수 있습니다.'));
-     for(const item of result.observedResults){const li=el('li'),link=el('a',item.title);link.href=item.url;link.target='_blank';link.rel='noopener noreferrer';li.append(link,el('p',`${item.kind} · ${item.names.join(' / ')}`));list.append(li);}
+    for(const [attempt,snapshot] of (result.snapshots||[]).entries()){
+     const evidence=el('details'),summary=el('summary',`${keyword} · ${attempt+1}차 수집 결과 보기`),list=el('ol');
+     evidence.append(summary,el('p',`${time(snapshot.checkedAt)} · 서버가 확인한 순서입니다. 내 PC 검색 화면과 다를 수 있습니다.`));
+     for(const item of snapshot.results){const li=el('li'),link=el('a',item.title);link.href=item.url;link.target='_blank';link.rel='noopener noreferrer';li.append(link,el('p',`${item.kind} · ${item.names.join(' / ')}`));list.append(li);}
      evidence.append(list);status.append(evidence);
     }
+    if(result.verificationError)row.th.append(el('small',result.verificationError,'row-meta'));
     result.blogs.forEach((blog,i)=>{
      const cell=row.cells[i];cell.className='';cell.replaceChildren();
-     if(blog.rank===null){cell.append(el('span',`서버 조회 ${limit}위 내 없음`,'absent'));return;}
-     cell.append(el('strong',`${blog.rank}위`,'cell-rank'));
+     if(blog.rank===null){cell.append(el('span',`서버 조회 ${limit}위 내 미발견`,'absent'));cell.append(el('small',`${result.snapshots.length}회 확인 · 내 PC 결과와 다를 수 있습니다.`,'row-meta'));return;}
+     cell.append(el('strong',`${blog.changed?'관측 ':''}${blog.rank}위`,'cell-rank'));
+     if(blog.changed)cell.append(el('small',`조회마다 결과가 다릅니다: ${blog.observedRanks.map(r=>r===null?'미발견':r+'위').join(' → ')}`,'row-meta'));
      const details=el('details'),summary=el('summary','발견된 글');details.append(summary);
      const link=el('a',blog.match.title);link.href=blog.match.url;link.target='_blank';link.rel='noopener noreferrer';details.append(link);cell.append(details);
     });

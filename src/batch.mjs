@@ -8,9 +8,20 @@ export function parseNames(values) {
 }
 export async function collectForBlogs(collect,keyword,values,limit,options) {
  const names=parseNames(values);
- const report=await collect(keyword,names[0],limit,options);
- return {keyword:report.keyword,limit:report.limit,checkedCount:report.checkedCount,checkedAt:report.checkedAt,basis:report.basis,
-  observedResults:report.results.slice(0,limit).map((r,i)=>({rank:i+1,title:r.title,url:r.url,kind:r.kind,names:r.names})),
-  blogs:names.map(blogName=>({blogName,...calculateRank(report.results,blogName,limit)}))};
+ const reports=[await collect(keyword,names[0],limit,options)];
+ let verificationError;
+ // Recheck absent names once; never merge the order of separate snapshots.
+ if(names.some(name=>calculateRank(reports[0].results,name,limit).rank===null)){
+  try{reports.push(await collect(keyword,names[0],limit,options));}
+  catch{verificationError='추가 확인에 실패했습니다. 첫 조회 결과만 표시합니다.';}
+ }
+ const report=reports[reports.length-1];
+ const snapshots=reports.map(r=>({checkedAt:r.checkedAt,results:r.results.slice(0,limit).map((item,i)=>({rank:i+1,title:item.title,url:item.url,kind:item.kind,names:item.names}))}));
+ return {keyword:report.keyword,limit:report.limit,checkedCount:report.checkedCount,checkedAt:report.checkedAt,basis:report.basis,snapshots,verificationError,
+  blogs:names.map(blogName=>{
+   const observations=reports.map(r=>({...calculateRank(r.results,blogName,limit),checkedAt:r.checkedAt}));
+   const last=observations[observations.length-1];
+   const selected=last.rank!==null?last:observations.find(o=>o.rank!==null)||last;
+   return {blogName,...selected,observedRanks:observations.map(o=>o.rank),changed:observations.length>1&&observations[0].rank!==last.rank};
+  })};
 }
-
