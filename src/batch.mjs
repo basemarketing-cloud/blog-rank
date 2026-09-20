@@ -10,5 +10,7 @@ export async function collectForBlogs(collect,keyword,values,limit,options) {
  const names=parseNames(values);
  const report=await collect(keyword,names[0],limit,options);
  return {keyword:report.keyword,limit:report.limit,checkedCount:report.checkedCount,checkedAt:report.checkedAt,basis:report.basis,
+  observedResults:report.results.slice(0,limit).map((r,i)=>({rank:i+1,title:r.title,url:r.url,kind:r.kind,names:r.names})),
   blogs:names.map(blogName=>({blogName,...calculateRank(report.results,blogName,limit)}))};
 }
+
