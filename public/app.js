@@ -25,6 +25,13 @@ function setBlog(cell,blog,limit,snapshotCount){
  const details=el('details'),summary=el('summary','발견된 글');details.append(summary);
  const link=el('a',blog.match.title);link.href=blog.match.url;link.target='_blank';link.rel='noopener noreferrer';details.append(link);cell.append(details);
 }
+function chunk(values,size){const groups=[];for(let index=0;index<values.length;index+=size)groups.push(values.slice(index,index+size));return groups;}
+function exportClipKeywords(keywords,part,from,to){
+ const filename=`clip-노출-키워드_${String(part).padStart(2,'0')}_${from}-${to}.csv`,blob=new Blob(['\uFEFF'+keywords.join('\r\n')],{type:'text/csv;charset=utf-8'}),url=URL.createObjectURL(blob);
+ const record=el('details',undefined,'batch-record'),summary=el('summary',`클립 노출 키워드 파일 ${part} · ${keywords.length}개 · 내려받음`),content=el('div',undefined,'batch-content'),link=el('a','엑셀 파일 다시 다운로드','download-link');
+ link.href=url;link.download=filename;content.append(link);record.append(summary,content);status.append(record);
+ link.click();
+}
 function appendEvidence(container,keyword,snapshots){
  for(const [attempt,snapshot] of (snapshots||[]).entries()){
   const evidence=el('details'),summary=el('summary',`${keyword} · ${attempt+1}차 수집 결과 보기`),list=el('ol');
@@ -36,12 +43,12 @@ function appendEvidence(container,keyword,snapshots){
 form.addEventListener('submit',async event=>{
  event.preventDefault();
  const values=new FormData(form),blogNames=lines(values.get('blogName')),limit=Number(values.get('limit'));
- const groups=[1,2,3].map(number=>({label:`${number}차 결과`,keywords:lines(values.get(`keywords-${number}`))})).filter(group=>group.keywords.length);
- if(!groups.length||groups.some(group=>group.keywords.length>50)||blogNames.length>20||[...groups.flatMap(group=>group.keywords),...blogNames].some(value=>value.length>100)){
-  progress.textContent='각 키워드 칸은 최대 50개, 블로그명은 최대 20개까지 입력할 수 있습니다. 한 항목은 100자까지 가능합니다.';return;
+ const keywords=lines(values.get('keywords-all')),groups=chunk(keywords,50).map((items,index)=>({label:`${index+1}차 결과 · ${index*50+1}~${index*50+items.length}`,keywords:items}));
+ if(!keywords.length||keywords.length>2000||blogNames.length>20||[...keywords,...blogNames].some(value=>value.length>100)){
+  progress.textContent='키워드는 최대 2,000개, 블로그명은 최대 20개까지 입력할 수 있습니다. 한 항목은 100자까지 가능합니다.';return;
  }
  const controls=[...form.querySelectorAll('input,textarea,button')];controls.forEach(control=>control.disabled=true);
- status.replaceChildren();let failed=0,completed=0,total=groups.reduce((sum,group)=>sum+group.keywords.length,0),clipKeywords=[];
+ status.replaceChildren();let failed=0,completed=0,total=keywords.length,clipKeywords=[],exportKeywords=[],exportPart=0,exportStart=1;
  try{
   for(const group of groups){
    const record=el('details',undefined,'batch-record'),summary=el('summary',`${group.label} · 대기 중`),content=el('div',undefined,'batch-content'),table=tableFor(group,blogNames,limit);
@@ -53,7 +60,7 @@ form.addEventListener('submit',async event=>{
      const response=await fetch('/api/rank',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({keyword,blogNames,limit}),signal:AbortSignal.timeout(155000)});
      const result=await response.json();if(!response.ok)throw new Error(result.error||'검색에 실패했습니다. 잠시 후 다시 시도해주세요.');
      row.th.append(el('small',`${result.checkedCount}개 확인\n${time(result.checkedAt)}`,'row-meta'));
-     setClip(row.clip,result.clip);if(result.clip?.visible)clipKeywords.push({keyword,labels:result.clip.labels||[]});result.blogs.forEach((blog,index)=>setBlog(row.blogCells[index],blog,limit,result.snapshots?.length||1));
+     setClip(row.clip,result.clip);if(result.clip?.visible){clipKeywords.push({keyword,labels:result.clip.labels||[]});exportKeywords.push(keyword);}result.blogs.forEach((blog,index)=>setBlog(row.blogCells[index],blog,limit,result.snapshots?.length||1));
      appendEvidence(content,keyword,result.snapshots);
      if(result.verificationError)row.th.append(el('small',result.verificationError,'row-meta'));
     }catch(error){
@@ -61,6 +68,7 @@ form.addEventListener('submit',async event=>{
      row.clip.className='cell-error';row.clip.replaceChildren(el('strong','조회 실패'),el('p',message));
      row.blogCells.forEach(cell=>{cell.className='cell-error';cell.replaceChildren(el('strong','조회 실패'),el('p',message));});
     }
+    if(completed%150===0||completed===total){exportPart++;exportClipKeywords(exportKeywords,exportPart,exportStart,completed);exportKeywords=[];exportStart=completed+1;}
    }
    summary.textContent=`${group.label} · ${group.keywords.length}개 조회 완료${failed?` · 누적 ${failed}개 실패`:''} · 눌러서 보기`;
   }
