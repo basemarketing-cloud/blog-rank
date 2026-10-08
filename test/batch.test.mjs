@@ -25,3 +25,17 @@ test('all found needs one collection; failed verification preserves first snapsh
  calls=0;const partial=await collectForBlogs(async()=>{if(calls++)throw new Error('unavailable');return report;},'k',['a','b'],20);
  assert.equal(partial.snapshots.length,1);assert.ok(partial.verificationError);assert.equal(partial.blogs[0].rank,1);assert.equal(partial.blogs[1].rank,null);
 });
+
+test('empty blog list checks Clip exposure without a recheck',async()=>{
+ let calls=0;
+ const result=await collectForBlogs(async(keyword,blogName)=>{
+  calls++;
+  assert.equal(keyword,'키워드');
+  assert.equal(blogName,null);
+  return {keyword,limit:20,checkedAt:'now',checkedCount:1,clip:{visible:true,labels:['네이버 클립']},results:[{kind:'웹사이트',names:[]}]};
+ },'키워드',[],20);
+ assert.equal(calls,1);
+ assert.deepEqual(result.blogs,[]);
+ assert.equal(result.clip.visible,true);
+ assert.deepEqual(result.clip.observed,[true]);
+});
