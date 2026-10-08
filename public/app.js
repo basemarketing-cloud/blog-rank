@@ -8,8 +8,8 @@ const time=value=>new Intl.DateTimeFormat('ko-KR',{dateStyle:'short',timeStyle:'
 form.addEventListener('submit',async event=>{
  event.preventDefault();
  const values=new FormData(form),keywords=lines(values.get('keyword')),blogNames=lines(values.get('blogName')),limit=Number(values.get('limit'));
- if(!keywords.length||!blogNames.length||keywords.length>20||blogNames.length>20||[...keywords,...blogNames].some(x=>x.length>100)){
-  progress.textContent='키워드와 블로그명을 각각 한 줄에 하나씩 입력해주세요. 각각 최대 20개, 한 항목당 100자까지 가능합니다.';return;
+ if(!keywords.length||!blogNames.length||keywords.length>50||blogNames.length>20||[...keywords,...blogNames].some(x=>x.length>100)){
+  progress.textContent='검색 키워드는 최대 50개, 블로그명은 최대 20개까지 입력할 수 있습니다. 한 항목은 100자까지 가능합니다.';return;
  }
  const controls=[...form.querySelectorAll('input,textarea,button')];controls.forEach(x=>x.disabled=true);
  const table=el('table'),caption=el('caption',`네이버 통합검색 일반 결과 · ${limit}위까지 · 한국 시간`),head=el('thead'),headRow=el('tr');
