@@ -44,6 +44,11 @@ test('DOM parser excludes ad/place, preserves general websites, reads visible pr
    assert.deepEqual(media.unknown,[]);assert.deepEqual(media.unresolved,[]);
    assert.equal(media.results.length,2);assert.equal(calculateRank(orderResults(media.results),'휴한의원 창원',20).rank,2);
   }
+  await page.setContent(`<div id="main_pack"><div data-block-id="clip/prs_template_v2_clip_overlaytext_desk.ts"><h2>네이버 클립</h2>${card('https://blog.naver.com/clip/123','클립 제작자','클립 제목')}</div><section>${card('https://example.com','웹사이트','일반 결과')}</section></div>`);
+  const clip=await page.evaluate(extractPage,browserRules);
+  assert.equal(clip.clip.visible,true);
+  assert.deepEqual(clip.clip.labels,['네이버 클립']);
+  assert.equal(clip.results.length,1);
   // Unknown real result blocks still fail closed; do not disable the guard.
   await page.setContent('<div id="main_pack"><section><a href="https://example.com/article">새로운 형태의 일반 결과</a></section></div>');
   assert.equal((await page.evaluate(extractPage,browserRules)).unknown.length,1);
