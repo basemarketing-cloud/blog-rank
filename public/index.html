@@ -2,20 +2,18 @@
 <html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>네이버 통합검색 순위·클립 확인</title><meta name="description" content="네이버 통합검색 일반 결과 순위와 네이버 클립 노출 여부를 확인합니다."><link rel="stylesheet" href="/style.css"><script src="/app.js" defer></script></head>
 <body><main>
  <header><span class="brand">N</span><div><p class="eyebrow">NAVER SEARCH CHECKER</p><h1>키워드별 순위와 클립 노출을 확인하세요</h1></div></header>
- <p class="intro">50개씩 최대 세 묶음을 순서대로 확인합니다. 블로그명을 비워두면 클립 노출 여부만 확인합니다.</p>
+ <p class="intro">최대 2,000개 키워드를 50개씩 순서대로 확인합니다. 150개가 끝날 때마다 클립 노출 키워드 파일을 자동으로 내려받습니다.</p>
  <div class="workspace">
  <section class="panel"><div class="section-title"><span class="step">01</span><h2>검색 조건</h2></div>
   <form id="search-form">
    <fieldset class="keyword-groups"><legend>검색 키워드</legend>
-    <label for="keywords-1">1차 키워드 <span>최대 50개</span></label><textarea id="keywords-1" name="keywords-1" rows="6" maxlength="5050" placeholder="창원 불면증&#10;창원 하지불안증후군"></textarea>
-    <label for="keywords-2">2차 키워드 <span>1차 완료 후 자동 조회</span></label><textarea id="keywords-2" name="keywords-2" rows="6" maxlength="5050"></textarea>
-    <label for="keywords-3">3차 키워드 <span>2차 완료 후 자동 조회</span></label><textarea id="keywords-3" name="keywords-3" rows="6" maxlength="5050"></textarea>
+    <label for="keywords-all">전체 키워드 <span>최대 2,000개</span></label><textarea id="keywords-all" name="keywords-all" rows="14" maxlength="202000" placeholder="창원 불면증&#10;창원 하지불안증후군"></textarea>
    </fieldset>
-   <p class="help">각 칸은 한 줄에 하나씩 최대 50개입니다. 비어 있는 칸은 건너뜁니다.</p>
+   <p class="help">한 줄에 하나씩 붙여넣으세요. 자동으로 50개씩 순서대로 조회하며, 150개 완료마다 클립 노출 키워드를 엑셀용 CSV 파일로 자동 다운로드합니다.</p>
    <label for="blogName">찾을 블로그명 <span>선택</span></label><textarea id="blogName" name="blogName" rows="4" maxlength="2020" placeholder="휴한의원 창원&#10;창원휴한의원" aria-describedby="name-help"></textarea>
    <p class="help" id="name-help">비워두면 블로그 순위 없이 클립 노출 여부만 확인합니다. 입력하면 최대 20개를 함께 비교합니다.</p>
    <fieldset><legend>검색 범위</legend><div class="choices"><label><input type="radio" name="limit" value="20" checked><span>20위까지</span></label><label><input type="radio" name="limit" value="50"><span>50위까지</span></label><label><input type="radio" name="limit" value="100"><span>100위까지</span></label></div></fieldset>
-   <button id="submit" type="submit">순서대로 확인 <span aria-hidden="true">↗</span></button>
+   <button id="submit" type="submit">2,000개 자동 확인 <span aria-hidden="true">↗</span></button>
   </form>
   <p class="method">클립 노출은 네이버 통합검색 화면의 별도 ‘네이버 클립’ 영역 기준입니다.<br>광고 · 플레이스 · 클립 · 동영상은 일반 결과 순위에서 제외합니다.</p>
  </section>
