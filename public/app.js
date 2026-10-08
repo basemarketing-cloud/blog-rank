@@ -41,7 +41,7 @@ form.addEventListener('submit',async event=>{
   progress.textContent='각 키워드 칸은 최대 50개, 블로그명은 최대 20개까지 입력할 수 있습니다. 한 항목은 100자까지 가능합니다.';return;
  }
  const controls=[...form.querySelectorAll('input,textarea,button')];controls.forEach(control=>control.disabled=true);
- status.replaceChildren();let failed=0,completed=0,total=groups.reduce((sum,group)=>sum+group.keywords.length,0);
+ status.replaceChildren();let failed=0,completed=0,total=groups.reduce((sum,group)=>sum+group.keywords.length,0),clipKeywords=[];
  try{
   for(const group of groups){
    const record=el('details',undefined,'batch-record'),summary=el('summary',`${group.label} · 대기 중`),content=el('div',undefined,'batch-content'),table=tableFor(group,blogNames,limit);
@@ -53,7 +53,7 @@ form.addEventListener('submit',async event=>{
      const response=await fetch('/api/rank',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({keyword,blogNames,limit}),signal:AbortSignal.timeout(155000)});
      const result=await response.json();if(!response.ok)throw new Error(result.error||'검색에 실패했습니다. 잠시 후 다시 시도해주세요.');
      row.th.append(el('small',`${result.checkedCount}개 확인\n${time(result.checkedAt)}`,'row-meta'));
-     setClip(row.clip,result.clip);result.blogs.forEach((blog,index)=>setBlog(row.blogCells[index],blog,limit,result.snapshots?.length||1));
+     setClip(row.clip,result.clip);if(result.clip?.visible)clipKeywords.push({keyword,labels:result.clip.labels||[]});result.blogs.forEach((blog,index)=>setBlog(row.blogCells[index],blog,limit,result.snapshots?.length||1));
      appendEvidence(content,keyword,result.snapshots);
      if(result.verificationError)row.th.append(el('small',result.verificationError,'row-meta'));
     }catch(error){
@@ -64,6 +64,14 @@ form.addEventListener('submit',async event=>{
    }
    summary.textContent=`${group.label} · ${group.keywords.length}개 조회 완료${failed?` · 누적 ${failed}개 실패`:''} · 눌러서 보기`;
   }
-  progress.textContent=`${total}개 키워드 조회 완료 · 블로그 ${blogNames.length}개 비교 · 클립 노출 확인${failed?` · ${failed}개 키워드 조회 실패`:''}`;
+  const clipRecord=el('details',undefined,'batch-record'),clipSummary=el('summary',`클립 노출 키워드만 보기 · ${clipKeywords.length}개 · 눌러서 보기`),clipContent=el('div',undefined,'batch-content');
+  clipRecord.append(clipSummary,clipContent);
+  if(clipKeywords.length){
+   const list=el('ol');
+   for(const item of clipKeywords){const entry=el('li'),title=el('strong',item.keyword);entry.append(title);if(item.labels.length)entry.append(el('small',item.labels.join(' · '),'row-meta'));list.append(entry);}
+   clipContent.append(el('p','3차 조회가 모두 끝난 뒤, 네이버 클립 영역이 노출된 키워드만 모았습니다.'),list);
+  }else clipContent.append(el('p','세 묶음에서 클립이 노출된 키워드가 없습니다.'));
+  status.append(clipRecord);
+  progress.textContent=`${total}개 키워드 조회 완료 · 블로그 ${blogNames.length}개 비교 · 클립 노출 ${clipKeywords.length}개${failed?` · ${failed}개 키워드 조회 실패`:''}`;
  }finally{controls.forEach(control=>control.disabled=false);}
 });
