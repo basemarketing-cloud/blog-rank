@@ -1,9 +1,11 @@
 // Runs inside Playwright's page. Selectors are isolated here for Naver layout updates.
 export function extractPage(rules) {
   const root = document.querySelector('#main_pack');
-  if (!root) return {error:'STRUCTURE',results:[]};
+  if (!root) return {error:'STRUCTURE',results:[],clip:{visible:false}};
   const visible = el => { const r=el.getBoundingClientRect(); return r.width>0 && r.height>0 && getComputedStyle(el).visibility!=='hidden'; };
   const clean = text => (text || '').normalize('NFC').replace(/\s+/gu,' ').trim();
+  const clipBlocks=[...root.querySelectorAll('[data-block-id^="clip/"], [data-meta-ssuid="clip"]')].filter(visible);
+  const clip={visible:clipBlocks.length>0,labels:[...new Set(clipBlocks.map(block=>clean(block.querySelector('h2')?.textContent)||'네이버 클립'))]};
   const excluded = el => {
     if(el.closest(rules.containers)) return true;
     let p=el;
@@ -41,5 +43,5 @@ export function extractPage(rules) {
     if(section.querySelector('a[href^="http"]') && !section.querySelector(titleSelector)) unknown.push(clean(section.textContent).slice(0,80));
   }
   const pages=[...root.querySelectorAll('[aria-label="페이지 탐색"] a')].map(a=>({number:Number(a.textContent.replace(/\D/g,'')),url:a.href}));
-  return {results,unresolved,unknown,pages,excludedBlocks:[...root.children].filter(e=>visible(e)&&excluded(e)).map(e=>clean(e.querySelector('h2')?.textContent)||e.getAttribute('data-collection'))};
+  return {results,unresolved,unknown,pages,clip,excludedBlocks:[...root.children].filter(e=>visible(e)&&excluded(e)).map(e=>clean(e.querySelector('h2')?.textContent)||e.getAttribute('data-collection'))};
 }
