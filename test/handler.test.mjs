@@ -21,3 +21,11 @@ test('API rejects malformed, oversized and cross-origin requests before collecti
  assert.equal((await request(handler,'x'.repeat(17000))).status,400);
  assert.equal((await request(handler,'{}',{origin:'https://other.example'})).status,403);
 });
+
+test('API accepts an empty blog list for Clip-only checks',async()=>{
+ const handler=createRankHandler(async()=>({keyword:'키워드',results:[{kind:'웹사이트',names:[]}],checkedCount:1,clip:{visible:true,labels:['네이버 클립']}}));
+ const res=await request(handler,JSON.stringify({keyword:'키워드',blogNames:[],limit:20}));
+ assert.equal(res.status,200);
+ assert.deepEqual(res.data.blogs,[]);
+ assert.equal(res.data.clip.visible,true);
+});
